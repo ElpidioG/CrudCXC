@@ -1,0 +1,142 @@
+.lista {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    padding-bottom: 75px;
+}
+
+.lista h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+th, td {
+    padding: 1rem;
+    text-align: center;
+}
+
+th {
+    background-color: #e0f7fa;
+    font-weight: 600;
+    color: #007bff;
+}
+
+th:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+th:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+td {
+    background-color: #ffffff;
+    transition: background-color 0.2s ease;
+}
+
+td:hover {
+    background-color: #f1f1f1;
+}
+
+.lista-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.lista-item:hover {
+    transform: scale(1.02);
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.button-container button {
+    background: none;
+    color: #007bff;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 0.6rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.button-container button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.lista-vacia {
+    text-align: center;
+    color: #999;
+    font-size: 1.2rem;
+    margin-top: 2rem;
+}
+
+input[type="text"], input[type="number"], input[type="date"], select {
+    padding: 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin: 0.5rem 0;
+    width: 100%;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+input[type="text"], input[type="number"], input[type="date"] {
+    background-color: #f9f9f9;
+}
+
+input[type="text"]:nth-child(even), input[type="number"]:nth-child(even), input[type="date"]:nth-child(even) {
+    background-color: #ffffff;
+}
+
+.button-toggle-formulario {
+    background-color: #228dff;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    position: absolute;
+    margin-top:100px;
+    right: 35px;
+    bottom: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.button-toggle-formulario:hover {
+    background-color:#00438a;
+}
+
+.button-toggle-formulario:active {
+    background-color: #228dff;
+}

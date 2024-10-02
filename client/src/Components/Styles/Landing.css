@@ -1,0 +1,93 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom, #007BFF,#ffffff); /* Degradado de blanco a azul */
+    background-repeat: no-repeat;
+}
+
+.header {
+ 
+    color: white;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.header p {
+    margin-bottom:100px; 
+}
+
+.cta-button {
+    background: white;
+    color: #007BFF;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: bold;
+    transition: background 0.3s, color 0.3s;
+
+}
+
+.cta-button:hover {
+    background: #0056b3; 
+    color: white;
+}
+
+.features h2{
+    margin-top: 80px;
+    color: white;
+}
+.features, .testimonials {
+    padding: 50px 20px;
+    text-align: center;
+}
+
+.feature-list {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap; 
+}
+
+.feature {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 30px;
+    border-radius: 10px;
+    width: 250px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.feature:hover {
+    transform: translateY(-5px);
+}
+
+.testimonials h2 {
+    color: white;
+}
+
+.testimonial-list {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column; 
+    gap: 20px; 
+}
+
+.testimonial {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 30px;
+    border-radius: 10px;
+    margin: 0 auto; 
+    width: 80%; 
+    max-width: 600px; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+}
+
+.footer {
+    text-align: center;
+    padding: 20px;
+    background: #333;
+    color: white;
+}
