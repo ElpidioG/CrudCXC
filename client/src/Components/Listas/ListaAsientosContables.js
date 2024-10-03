@@ -63,6 +63,7 @@ const ListaAsientosContables = () => {
                 <table>
                     <thead>
                         <tr>
+                            
                             <th>Cliente ID</th>
                             <th>Descripción</th>
                             <th>Fecha</th>

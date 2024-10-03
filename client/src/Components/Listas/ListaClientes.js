@@ -66,6 +66,7 @@ const ListaClientes = () => {
                 <table>
                     <thead>
                         <tr>
+                        <th>Cliente ID</th>
                             <th>Nombre</th>
                             <th>Cédula</th>
                             <th>Límite de Crédito</th>
@@ -76,6 +77,7 @@ const ListaClientes = () => {
                     <tbody>
                         {clientes.map((cliente) => (
                             <tr key={cliente.id}>
+                             <td>{cliente.id}</td>
                                 <td>{cliente.nombre}</td>
                                 <td>{cliente.cedula}</td>
                                 <td>${parseFloat(cliente.limite_credito).toFixed(2)}</td>

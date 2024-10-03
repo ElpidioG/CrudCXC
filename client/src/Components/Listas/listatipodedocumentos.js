@@ -66,6 +66,7 @@ const ListaTiposdedocumentos = () => {
                 <table>
                     <thead>
                         <tr>
+                        <th>Id</th>
                             <th>Descripción</th>
                             <th>Cuenta Contable</th>
                             <th>Estado</th>
@@ -75,6 +76,7 @@ const ListaTiposdedocumentos = () => {
                     <tbody>
                         {tiposdedocumentos.map((tiposdedocumento) => (
                             <tr key={tiposdedocumento.id}>
+                                   <td>{tiposdedocumento.id}</td>
                                 <td>{tiposdedocumento.descripcion}</td>
                                 <td>{tiposdedocumento.cuenta_contable}</td>
                                 <td>{tiposdedocumento.estado}</td>
