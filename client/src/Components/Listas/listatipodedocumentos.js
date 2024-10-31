@@ -7,6 +7,10 @@ const ListaTiposdedocumentos = () => {
     const [tiposdedocumentos, setTiposdedocumentos] = useState([]);
     const [tipoDocumentoId, setTipoDocumentoId] = useState(null);
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
+    
+    // Estados para los filtros
+    const [descripcionFiltro, setDescripcionFiltro] = useState('');
+    const [estadoFiltro, setEstadoFiltro] = useState('');
 
     useEffect(() => {
         fetchTipoDocumento();
@@ -53,20 +57,68 @@ const ListaTiposdedocumentos = () => {
         }
     };
 
+    const handleEdit = (tipoDocumento) => {
+        setTipoDocumentoId(tipoDocumento.id);
+        setMostrarFormulario(true); // Mostrar el formulario al editar
+    };
+
     const toggleFormulario = () => {
         setMostrarFormulario(!mostrarFormulario);
     };
 
+    // Función para limpiar los filtros
+    const limpiarFiltros = () => {
+        setDescripcionFiltro('');
+        setEstadoFiltro('');
+    };
+
+    // Filtrar los tipos de documentos
+    const tiposdedocumentosFiltrados = tiposdedocumentos.filter(tiposdedocumento => {
+        const cumpleDescripcion = tiposdedocumento.descripcion.toLowerCase().includes(descripcionFiltro.toLowerCase());
+        const cumpleEstado = estadoFiltro ? tiposdedocumento.estado === estadoFiltro : true;
+
+        return cumpleDescripcion && cumpleEstado;
+    });
+
     return (
         <div className="lista">
             <h2>Lista de Tipos de Documentos</h2>
-            {tiposdedocumentos.length === 0 ? (
+            <div className="filtros-container"> {/* Contenedor para filtros */}
+                <div className="filtro-input">
+                    <label htmlFor="descripcionFiltro">Filtrar por Descripción:</label>
+                    <input
+                        type="text"
+                        id="descripcionFiltro"
+                        value={descripcionFiltro}
+                        onChange={(e) => setDescripcionFiltro(e.target.value)}
+                        className="filtro-input" // Clase para el estilo
+                    />
+                </div>
+                <div className="filtro-select">
+                    <label htmlFor="estadoFiltro">Filtrar por Estado:</label>
+                    <select
+                        id="estadoFiltro"
+                        value={estadoFiltro}
+                        onChange={(e) => setEstadoFiltro(e.target.value)}
+                        className="filtro-select" // Clase para el estilo
+                    >
+                        <option value="">Todos</option>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                    </select>
+                </div>
+                <button className="button-limpiar-filtros" onClick={limpiarFiltros}>
+                    Limpiar Filtros
+                </button>
+            </div>
+
+            {tiposdedocumentosFiltrados.length === 0 ? (
                 <p className="lista-vacia">No hay tipos de documentos disponibles.</p>
             ) : (
                 <table>
                     <thead>
                         <tr>
-                        <th>Id</th>
+                            <th>Id</th>
                             <th>Descripción</th>
                             <th>Cuenta Contable</th>
                             <th>Estado</th>
@@ -74,15 +126,15 @@ const ListaTiposdedocumentos = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {tiposdedocumentos.map((tiposdedocumento) => (
+                        {tiposdedocumentosFiltrados.map((tiposdedocumento) => (
                             <tr key={tiposdedocumento.id}>
-                                   <td>{tiposdedocumento.id}</td>
+                                <td>{tiposdedocumento.id}</td>
                                 <td>{tiposdedocumento.descripcion}</td>
                                 <td>{tiposdedocumento.cuenta_contable}</td>
                                 <td>{tiposdedocumento.estado}</td>
                                 <td>
                                     <div className="button-container">
-                                        <button onClick={() => setTipoDocumentoId(tiposdedocumento.id)}>Editar</button>
+                                        <button onClick={() => handleEdit(tiposdedocumento)}>Editar</button>
                                         <button onClick={() => handleDelete(tiposdedocumento.id)}>Eliminar</button>
                                     </div>
                                 </td>
@@ -103,6 +155,7 @@ const ListaTiposdedocumentos = () => {
                     agregarTipoDocumento={agregarTipoDocumento} 
                     actualizarTiposdedocumentos={actualizarTiposdedocumentos} 
                     setTipoDocumentoId={setTipoDocumentoId} 
+                    setMostrarFormulario={setMostrarFormulario} 
                 />
             )}
         </div>

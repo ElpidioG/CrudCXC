@@ -1,10 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
-
+const saltRounds = 10;
+const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = 3001; // El puerto en el que correrá el servidor
-
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = 'secreto';
 // Middleware para CORS y para poder trabajar con JSON
 app.use(cors());
 app.use(express.json());
@@ -232,8 +234,6 @@ app.delete('/api/asientos_contables/:id', (req, res) => {
 
 
 //Clientes
-
-
 // Ruta para obtener todos los clientes
 app.get('/api/clientes', (req, res) => {
     const query = 'SELECT * FROM clientes';
@@ -245,34 +245,32 @@ app.get('/api/clientes', (req, res) => {
         res.json(results); // Enviar los resultados al frontend
     });
 });
-
 // Ruta para crear un nuevo cliente
 app.post('/api/clientes', (req, res) => {
     const { nombre, cedula, limite_credito, estado } = req.body;
-    const query = 'INSERT INTO clientes (nombre, cedula, limite_credito, estado) VALUES (?, ?, ?, ?)';
+    const query = 'INSERT INTO clientes (cedula, nombre, limite_credito, estado) VALUES (?, ?, ?, ?)';
 
-    connection.query(query, [nombre, cedula, limite_credito, estado], (err, result) => {
+    connection.query(query, [cedula, nombre, limite_credito, estado], (err, result) => {
         if (err) {
             console.error("Error al insertar en la base de datos:", err);
             return res.status(500).send('Error al crear el cliente');
         }
 
         res.status(201).json({
-            id: result.insertId,
-            nombre,
             cedula,
+            nombre,
             limite_credito,
             estado
         });
     });
 });
 
-// Ruta para obtener un cliente específico
-app.get('/api/clientes/:id', (req, res) => {
-    const clienteId = req.params.id;
-    const query = 'SELECT * FROM clientes WHERE id = ?';
+// Ruta para obtener un cliente específico por cédula
+app.get('/api/clientes/:cedula', (req, res) => {
+    const { cedula } = req.params;
+    const query = 'SELECT * FROM clientes WHERE cedula = ?';
 
-    connection.query(query, [clienteId], (error, results) => {
+    connection.query(query, [cedula], (error, results) => {
         if (error) {
             return res.status(500).json({ error: error.message });
         }
@@ -283,38 +281,37 @@ app.get('/api/clientes/:id', (req, res) => {
     });
 });
 
-// Ruta para actualizar un cliente
-app.put('/api/clientes/:id', (req, res) => {
-    const { id } = req.params; // Obtener el ID de los parámetros de la URL
-    const { nombre, cedula, limite_credito, estado } = req.body;
+// Ruta para actualizar un cliente por cédula
+app.put('/api/clientes/:cedula', (req, res) => {
+    const { cedula } = req.params;
+    const { nombre, limite_credito, estado } = req.body;
 
     const query = `
         UPDATE clientes 
-        SET nombre = ?, cedula = ?, limite_credito = ?, estado = ?
-        WHERE id = ?`;
+        SET nombre = ?, limite_credito = ?, estado = ?
+        WHERE cedula = ?`;
 
-    connection.query(query, [nombre, cedula, limite_credito, estado, id], (err, result) => {
+    connection.query(query, [nombre, limite_credito, estado, cedula], (err, result) => {
         if (err) {
             console.error("Error al actualizar en la base de datos:", err);
             return res.status(500).send('Error al actualizar el cliente');
         }
 
         res.status(200).json({
-            id,
-            nombre,
             cedula,
+            nombre,
             limite_credito,
             estado
         });
     });
 });
 
-// Ruta para eliminar un cliente
-app.delete('/api/clientes/:id', (req, res) => {
-    const { id } = req.params;
-    const query = 'DELETE FROM clientes WHERE id = ?';
+// Ruta para eliminar un cliente por cédula
+app.delete('/api/clientes/:cedula', (req, res) => {
+    const { cedula } = req.params;
+    const query = 'DELETE FROM clientes WHERE cedula = ?';
 
-    connection.query(query, [id], (err, result) => {
+    connection.query(query, [cedula], (err, result) => {
         if (err) {
             console.error("Error al eliminar el cliente:", err);
             return res.status(500).send('Error al eliminar el cliente');
@@ -323,13 +320,10 @@ app.delete('/api/clientes/:id', (req, res) => {
     });
 });
 
-
-
-
-// Obtener Id del cliente
+// Ruta para obtener todas las cédulas de los clientes
 app.get('/api/clientesid', (req, res) => {
-    console.log('Solicitud recibida en /api/clientesid'); // Log para verificar la solicitud
-    const query = 'SELECT id FROM clientes';
+    const query = 'SELECT cedula FROM clientes';
+    
     connection.query(query, (err, result) => { 
         if (err) {
             console.error("Error al obtener clientes:", err);
@@ -550,5 +544,65 @@ app.get('/api/transaccionesid', (req, res) => {
             return res.status(500).json({ error: 'Error al obtener transacciones' });
         }
         res.json(result);
+    });
+});
+// Rutas de registro y login
+
+// Ruta para registro
+app.post('/api/register', async (req, res) => {
+    const { username, password, role } = req.body;
+
+    // Validar el rol
+    if (!['admin', 'user'].includes(role)) {
+        return res.status(400).send('Rol no válido');
+    }
+
+    try {
+        // Encriptar la contraseña
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Insertar el nuevo usuario en la base de datos
+        const query = 'INSERT INTO users (username, password, role) VALUES (?, ?, ?)';
+        connection.query(query, [username, hashedPassword, role], (err, result) => {
+            if (err) {
+                console.error("Error al registrar el usuario:", err);
+                return res.status(500).send('Error al registrar el usuario');
+            }
+            res.status(201).send('Usuario registrado con éxito');
+        });
+    } catch (error) {
+        console.error("Error al encriptar la contraseña:", error);
+        res.status(500).send('Error al procesar la solicitud');
+    }
+});
+// Ruta para login
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+
+    const query = 'SELECT * FROM users WHERE username = ?';
+    connection.query(query, [username], async (err, results) => {
+        if (err) {
+            console.error("Error al buscar el usuario:", err);
+            return res.status(500).send('Error al buscar el usuario');
+        }
+        if (results.length === 0) {
+            return res.status(401).send('Usuario no encontrado');
+        }
+
+        const user = results[0];
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            console.log('Contraseña ingresada:', password);
+            console.log('Contraseña almacenada:', user.password);
+            return res.status(401).send('Contraseña incorrecta');
+        }
+
+        // Crear un token JWT que incluye el rol
+        const token = jwt.sign({ id: user.id, username: user.username, role: user.role },JWT_SECRET, {
+            expiresIn: '1h' 
+        });
+
+        res.json({ token });
     });
 });

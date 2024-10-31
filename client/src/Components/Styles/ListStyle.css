@@ -75,7 +75,8 @@ td:hover {
     gap: 1rem;
 }
 
-.button-container button {
+.button-container button,
+.button-limpiar-filtros {
     background: none;
     color: #007bff;
     border: 2px solid #007bff;
@@ -87,7 +88,8 @@ td:hover {
     font-size: 0.9rem;
 }
 
-.button-container button:hover {
+.button-container button:hover,
+.button-limpiar-filtros:hover {
     background-color: #007bff;
     color: white;
 }
@@ -127,16 +129,62 @@ input[type="text"]:nth-child(even), input[type="number"]:nth-child(even), input[
     cursor: pointer;
     border-radius: 5px;
     position: absolute;
-    margin-top:100px;
+    margin-top: 100px;
     right: 35px;
     bottom: 10px;
     transition: background-color 0.3s ease;
 }
 
 .button-toggle-formulario:hover {
-    background-color:#00438a;
+    background-color: #00438a;
 }
 
 .button-toggle-formulario:active {
     background-color: #228dff;
+}
+
+.filtros-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.filtro-select,
+.filtro-fecha,
+.filtro-input,
+.filtro-montos {
+    margin-right: 20px;
+}
+
+.button-limpiar-filtros {
+    margin-left: 20px;
+    padding: 0.6rem; /* Igual que el resto de botones */
+    color: #007bff;
+    background: none;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.button-limpiar-filtros:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.filtro-montos {
+    display: flex;
+    align-items: center;
+}
+
+.filtro-montos label {
+    margin-right: 8px;
+}
+
+.filtro-montos input {
+    margin-right: 16px;
+    width: 100px;
 }

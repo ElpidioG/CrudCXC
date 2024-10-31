@@ -12,8 +12,7 @@ const FormularioCliente = ({ clienteId, agregarCliente, fetchClientes, setClient
 
     useEffect(() => {
         if (clienteId) {
-
-            axios.get(`http://localhost:3001/api/clientes/${clienteId}`) //Cargar clientes
+            axios.get(`http://localhost:3001/api/clientes/${clienteId}`)
                 .then(response => {
                     const clienteData = response.data;
                     setFormData({
@@ -28,7 +27,6 @@ const FormularioCliente = ({ clienteId, agregarCliente, fetchClientes, setClient
                     alert("Error al obtener cliente");
                 });
         } else {
-            // Reiniciar el formulario
             setFormData({
                 nombre: '',
                 cedula: '',
@@ -37,6 +35,20 @@ const FormularioCliente = ({ clienteId, agregarCliente, fetchClientes, setClient
             });
         }
     }, [clienteId]);
+
+    const isValidCedula = (cedula) => {
+        if (!/^\d{11}$/.test(cedula)) return false;
+        
+        let sum = 0;
+        const weights = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1];
+
+        for (let i = 0; i < 11; i++) {
+            let num = parseInt(cedula[i]) * weights[i];
+            sum += num > 9 ? num - 9 : num;
+        }
+
+        return sum % 10 === 0;
+    };
 
     const handleInputChange = (e) => {
         setFormData({
@@ -48,36 +60,44 @@ const FormularioCliente = ({ clienteId, agregarCliente, fetchClientes, setClient
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (!isValidCedula(formData.cedula)) {
+            alert('Cédula no válida.');
+            return;
+        }
+
+        if (formData.limite_credito < 0) {
+            alert('El límite de crédito no puede ser negativo.');
+            return;
+        }
+
         if (clienteId) {
-            // Update cliente existente
             axios.put(`http://localhost:3001/api/clientes/${clienteId}`, formData)
                 .then(response => {
                     alert('Cliente actualizado');
-                    fetchClientes(); // Refresca la lista después de actualizar
-                    setFormData({ // Reinicia el formulario
+                    fetchClientes();
+                    setFormData({
                         nombre: '',
                         cedula: '',
                         limite_credito: 0,
                         estado: 'Activo'
                     });
-                    setClienteId(null); // Restablecer clienteId después de actualizar
+                    setClienteId(null);
                 })
                 .catch(error => {
                     console.error("Error al actualizar el cliente:", error);
                 });
         } else {
-            // Crear nuevo cliente
             axios.post('http://localhost:3001/api/clientes', formData)
                 .then(response => {
                     alert('Cliente creado');
-                    agregarCliente(response.data); // Agregar el nuevo cliente a la lista
-                    setFormData({ // Reinicia el formulario
+                    agregarCliente(response.data);
+                    setFormData({
                         nombre: '',
                         cedula: '',
                         limite_credito: 0,
                         estado: 'Activo'
                     });
-                    fetchClientes(); // Refresca la lista
+                    fetchClientes();
                 })
                 .catch(error => {
                     console.error("Error al crear el cliente:", error);
@@ -94,11 +114,17 @@ const FormularioCliente = ({ clienteId, agregarCliente, fetchClientes, setClient
             </div>
             <div>
                 <label>Cédula</label>
-                <input type="text" name="cedula" value={formData.cedula} onChange={handleInputChange} />
+                <input type="text" name="cedula" value={formData.cedula} onChange={handleInputChange} required />
             </div>
             <div>
                 <label>Límite de Crédito</label>
-                <input type="number" name="limite_credito" value={formData.limite_credito} onChange={handleInputChange} />
+                <input
+                    type="number"
+                    name="limite_credito"
+                    value={formData.limite_credito}
+                    onChange={handleInputChange}
+                    required
+                />
             </div>
             <div>
                 <label>Estado</label>
@@ -110,6 +136,6 @@ const FormularioCliente = ({ clienteId, agregarCliente, fetchClientes, setClient
             <button type="submit">{clienteId ? 'Actualizar' : 'Crear'}</button>
         </form>
     );
-}
+};
 
 export default FormularioCliente;

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../Styles/FormStyle.css'; // Estilos
 
-const FormularioTipoDocumento = ({ tipoDocumentoId, agregarTipoDocumento, fetchTipoDocumento, setTipoDocumentoId }) => {
+const FormularioTipoDocumento = ({ tipoDocumentoId, agregarTipoDocumento, fetchTipoDocumento, setTipoDocumentoId, setMostrarFormulario }) => {
     const [formData, setFormData] = useState({
         descripcion: '',
         cuenta_contable: '',
@@ -58,6 +58,7 @@ const FormularioTipoDocumento = ({ tipoDocumentoId, agregarTipoDocumento, fetchT
                         estado: 'Activo'
                     });
                     setTipoDocumentoId(null); // Restablecer tipoDocumentoId después de actualizar
+                    setMostrarFormulario(false); // Ocultar formulario después de actualizar
                 })
                 .catch(error => {
                     console.error("Error al actualizar el tipo de documento:", error);
@@ -74,6 +75,7 @@ const FormularioTipoDocumento = ({ tipoDocumentoId, agregarTipoDocumento, fetchT
                         estado: 'Activo'
                     });
                     fetchTipoDocumento(); // Refresca la lista
+                    setMostrarFormulario(false); // Ocultar formulario después de actualizar
                 })
                 .catch(error => {
                     console.error("Error al crear el Tipo de documento:", error);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../Styles/FormStyle.css'; // Estilos
@@ -17,26 +16,21 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
     const [clientes, setClientes] = useState([]); // Estado para clientes
 
     useEffect(() => {
-        // Cargar tipos de documentos
-        axios.get('http://localhost:3001/api/tipos_documentosid')
+        axios.get('http://localhost:3001/api/tipos_documentos')
             .then(response => setTiposDocumentos(response.data))
             .catch(error => console.error("Error al obtener tipos de documentos:", error));
 
-        // Cargar clientes
         axios.get('http://localhost:3001/api/clientesid')
             .then(response => setClientes(response.data))
             .catch(error => console.error("Error al obtener clientes:", error));
 
         if (transaccionId) {
-
             axios.get(`http://localhost:3001/api/transacciones/${transaccionId}`)
                 .then(response => {
                     const transaccionData = response.data;
 
-                    // Cambiar formato a fecha
                     const formattedDate = transaccionData.fecha.split('T')[0];
 
-                    // Colocar los datos en el formulario
                     setFormData({
                         tipo_movimiento: transaccionData.tipo_movimiento,
                         tipo_documento_id: transaccionData.tipo_documento_id,
@@ -51,7 +45,6 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
                     alert("Error al obtener transacción");
                 });
         } else {
-            // Si no hay transaccionId, reiniciar el formulario
             setFormData({
                 tipo_movimiento: '',
                 tipo_documento_id: '',
@@ -73,12 +66,16 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (formData.monto < 0) {
+            alert('El monto no puede ser negativo.');
+            return;
+        }
+
         if (transaccionId) {
-            // Update transacción existente
             axios.put(`http://localhost:3001/api/transacciones/${transaccionId}`, formData)
                 .then(response => {
                     alert('Transacción actualizada');
-                    actualizarTransaccion(response.data); // Update la transacción en la lista
+                    actualizarTransaccion(response.data);
                     setFormData({
                         tipo_movimiento: '',
                         tipo_documento_id: '',
@@ -93,12 +90,11 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
                     console.error("Error al actualizar la transacción:", error);
                 });
         } else {
-            // Crear nueva transacción
             axios.post('http://localhost:3001/api/transacciones', formData)
                 .then(response => {
                     alert('Transacción creada');
-                    agregarTransaccion(response.data); // Agregar la nueva transacción a la lista
-                    setFormData({ // Reinicia el formulario
+                    agregarTransaccion(response.data);
+                    setFormData({
                         tipo_movimiento: '',
                         tipo_documento_id: '',
                         numero_documento: '',
@@ -130,7 +126,7 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
                 <select name="tipo_documento_id" value={formData.tipo_documento_id} onChange={handleInputChange} required>
                     <option value="">Selecciona un tipo de documento</option>
                     {tiposDocumentos.map(tipo => (
-                        <option key={tipo.id} value={tipo.id}>{tipo.id}</option>
+                        <option key={tipo.id} value={tipo.id}>{tipo.descripcion}</option> // Cambiar id por descripcion
                     ))}
                 </select>
             </div>
@@ -143,11 +139,11 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
                 <input type="date" name="fecha" value={formData.fecha} onChange={handleInputChange} required />
             </div>
             <div>
-                <label>Cliente ID</label>
+                <label>Cliente ID (Cédula)</label>
                 <select name="cliente_id" value={formData.cliente_id} onChange={handleInputChange} required>
                     <option value="">Selecciona un cliente</option>
                     {clientes.map(cliente => (
-                        <option key={cliente.id} value={cliente.id}>{cliente.id}</option>
+                        <option key={cliente.id} value={cliente.id}>{cliente.cedula}</option>
                     ))}
                 </select>
             </div>
