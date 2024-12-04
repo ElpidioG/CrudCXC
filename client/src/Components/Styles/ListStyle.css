@@ -128,8 +128,8 @@ input[type="text"]:nth-child(even), input[type="number"]:nth-child(even), input[
     font-size: 16px;
     cursor: pointer;
     border-radius: 5px;
-    position: absolute;
-    margin-top: 100px;
+  
+   
     right: 35px;
     bottom: 10px;
     transition: background-color 0.3s ease;
@@ -187,4 +187,37 @@ input[type="text"]:nth-child(even), input[type="number"]:nth-child(even), input[
 .filtro-montos input {
     margin-right: 16px;
     width: 100px;
+}
+
+
+.button-exportar-pdf,.button-exportar-excel {
+    background: none;
+    color: #007bff;  /* Color original de la app */
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 0.6rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button-exportar-pdf:hover,
+.button-exportar-excel:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.button-exportar-pdf svg,
+.button-exportar-excel svg {
+    color: inherit;
+    margin-right: 8px;
+}
+.botones-container {
+    display: flex;
+    justify-content: space-between;  /* Alinea los botones a los extremos */
+    width: 100%;  /* Asegura que el contenedor ocupe todo el ancho disponible */
 }

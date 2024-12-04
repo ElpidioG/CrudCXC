@@ -46,7 +46,16 @@ app.listen(PORT, () => {
 
 // Ruta para obtener los balances
 app.get('/api/balances', (req, res) => {
-    const query = 'SELECT * FROM balances'; // Ajusta el nombre de la tabla según tu base de datos
+    const query = `
+     SELECT balances.id,
+    balances.cliente_id,clientes.nombre,
+    balances.fecha_corte,
+    balances.antiguedad_promedio_saldos,
+    balances.monto
+FROM crudcxc.balances join clientes on balances.cliente_id = clientes.cedula;
+
+
+    `; // Ajusta el nombre de la tabla según tu base de datos
 
     connection.query(query, (error, results) => {
         if (error) {
@@ -452,30 +461,78 @@ app.get('/api/transacciones', (req, res) => {
         res.json(results); // Enviar los resultados al frontend
     });
 });
-
-// Ruta para crear una nueva transacción
+// Ruta para crear una nueva transacción y actualizar el balance
 app.post('/api/transacciones', (req, res) => {
     const { tipo_movimiento, tipo_documento_id, numero_documento, fecha, cliente_id, monto } = req.body;
-    const query = 'INSERT INTO transacciones (tipo_movimiento, tipo_documento_id, numero_documento, fecha, cliente_id, monto) VALUES (?, ?, ?, ?, ?, ?)';
 
-    connection.query(query, [tipo_movimiento, tipo_documento_id, numero_documento, fecha, cliente_id, monto], (err, result) => {
-        if (err) {
-            console.error("Error al insertar en la base de datos:", err);
-            return res.status(500).send('Error al crear la transacción');
+    // Insertar la nueva transacción
+    const queryInsertTransaccion = `
+        INSERT INTO transacciones (tipo_movimiento, tipo_documento_id, numero_documento, fecha, cliente_id, monto) 
+        VALUES (?, ?, ?, ?, ?, ?)`;
+
+    connection.query(
+        queryInsertTransaccion,
+        [tipo_movimiento, tipo_documento_id, numero_documento, fecha, cliente_id, monto],
+        (err, result) => {
+            if (err) {
+                console.error("Error al insertar en la base de datos:", err);
+                return res.status(500).send('Error al crear la transacción');
+            }
+
+            // Obtener el tipo de documento para determinar si es factura o recibo
+            const queryGetTipoDocumento = 'SELECT descripcion FROM tipos_documentos WHERE id = ?';
+
+            connection.query(queryGetTipoDocumento, [tipo_documento_id], (err, rows) => {
+                if (err) {
+                    console.error("Error al obtener el tipo de documento:", err);
+                    return res.status(500).send('Error al verificar el tipo de documento');
+                }
+
+                if (rows.length === 0) {
+                    return res.status(400).send('Tipo de documento no encontrado');
+                }
+
+                const descripcion = rows[0].descripcion.toLowerCase();
+
+                // Determinar el ajuste del balance
+                const balanceAdjustment = descripcion.includes('factura de venta')
+                    ? monto // Factura de venta: suma al balance
+                    : descripcion.includes('recibo de pago')
+                    ? -monto // Recibo de pago: resta al balance
+                    : 0;
+
+                if (balanceAdjustment === 0) {
+                    return res.status(400).send('El tipo de documento no afecta el balance');
+                }
+
+                // Actualizar el balance del cliente
+                const queryUpdateBalance = `
+                    UPDATE balances 
+                    SET monto = monto + ? 
+                    WHERE cliente_id = ?`;
+
+                connection.query(queryUpdateBalance, [balanceAdjustment, cliente_id], (err) => {
+                    if (err) {
+                        console.error("Error al actualizar el balance:", err);
+                        return res.status(500).send('Error al actualizar el balance');
+                    }
+
+                    // Respuesta exitosa
+                    res.status(201).json({
+                        id: result.insertId,
+                        tipo_movimiento,
+                        tipo_documento_id,
+                        numero_documento,
+                        fecha,
+                        cliente_id,
+                        monto,
+                        balanceAdjustment,
+                    });
+                });
+            });
         }
-
-        res.status(201).json({
-            id: result.insertId,
-            tipo_movimiento,
-            tipo_documento_id,
-            numero_documento,
-            fecha,
-            cliente_id,
-            monto
-        });
-    });
+    );
 });
-
 // Ruta para obtener una transacción específica
 app.get('/api/transacciones/:id', (req, res) => {
     const transaccionId = req.params.id;

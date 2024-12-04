@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import FormularioTipoDocumento from '../Formularios/FormTipoDocumento';
 import '../Styles/ListStyle.css';
+import jsPDF from 'jspdf'; // Importa jsPDF
+import { FaFilePdf, FaFileExcel } from 'react-icons/fa';
+import * as XLSX from 'xlsx'; // Importa la librería xlsx
+import autoTable from 'jspdf-autotable'; // Importa autoTable para manejar tablas
 
 const ListaTiposdedocumentos = () => {
     const [tiposdedocumentos, setTiposdedocumentos] = useState([]);
@@ -80,6 +84,60 @@ const ListaTiposdedocumentos = () => {
         return cumpleDescripcion && cumpleEstado;
     });
 
+    const exportarPDF = () => {
+        const doc = new jsPDF();
+        const nombreEmpresa = "Cuentas x Cobrar ISO715";
+        const fechaActual = new Date().toLocaleDateString();
+
+        // Encabezado
+        doc.setFontSize(14);
+        doc.text(nombreEmpresa, 14, 15);
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${fechaActual}`, 14, 25);
+        
+
+        // Datos de la tabla
+        const datosTabla = tiposdedocumentosFiltrados.map(tiposdedocumento => [
+            tiposdedocumento.id,
+            tiposdedocumento.descripcion,
+            tiposdedocumento.cuenta_contable,
+            tiposdedocumento.estado,
+        ]);
+
+        // Tabla
+        autoTable(doc, {
+            startY: 35,
+            head: [['ID', 'Descripción', 'Cuenta Contable', 'Estado']],
+            body: datosTabla,
+        });
+
+        // Guardar PDF
+        doc.save(`Tipos_de_Documentos_${fechaActual}.pdf`);
+    };
+
+    const exportarExcel = () => {
+        const nombreEmpresa = "Cuentas x Cobrar ISO715";
+        const fechaActual = new Date().toLocaleDateString();
+
+        const worksheetData = [
+            [nombreEmpresa],
+            [`Fecha: ${fechaActual}`],
+            ['ID', 'Descripción', 'Cuenta Contable', 'Estado'],
+            ...tiposdedocumentosFiltrados.map(tiposdedocumento => [
+                tiposdedocumento.id,
+                tiposdedocumento.descripcion,
+                tiposdedocumento.cuenta_contable,
+                tiposdedocumento.estado,
+            ]),
+        ];
+
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Tipos de Documentos');
+        XLSX.writeFile(workbook, `Tipos_de_Documentos_${fechaActual}.xlsx`);
+    };
+
+
     return (
         <div className="lista">
             <h2>Lista de Tipos de Documentos</h2>
@@ -144,9 +202,21 @@ const ListaTiposdedocumentos = () => {
                 </table>
             )}
             
-            <button className="button-toggle-formulario" onClick={toggleFormulario}>
+            <div className="botones-container">
+    <button onClick={exportarPDF} className="button-exportar-pdf">
+        <FaFilePdf size={24} />
+        Exportar a PDF
+    </button>
+    <button onClick={exportarExcel} className="button-exportar-excel">
+        <FaFileExcel size={24} />
+        Exportar a Excel
+    </button>
+    <button className="button-toggle-formulario" onClick={toggleFormulario}>
                 {mostrarFormulario ? "Ocultar Formulario" : "Agregar nuevo"}
             </button>
+</div>
+            
+           
          
             {mostrarFormulario && (
                 <FormularioTipoDocumento 

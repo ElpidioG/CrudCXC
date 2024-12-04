@@ -1,1 +1,6 @@
-{}
+{
+  "dependencies": {
+    "jspdf-autotable": "^3.8.4",
+    "react-icons": "^5.4.0"
+  }
+}

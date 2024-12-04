@@ -28,7 +28,6 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
             axios.get(`http://localhost:3001/api/transacciones/${transaccionId}`)
                 .then(response => {
                     const transaccionData = response.data;
-
                     const formattedDate = transaccionData.fecha.split('T')[0];
 
                     setFormData({
@@ -62,6 +61,21 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
             [e.target.name]: e.target.value
         });
     };
+
+    // Filtrar los tipos de documentos según el tipo de movimiento
+    const documentosFiltrados = formData.tipo_movimiento
+    ? tiposDocumentos.filter((doc) => {
+        console.log("Descripción en tiposDocumentos:", doc.descripcion); // Debug
+        if (formData.tipo_movimiento === 'DB') {
+            return ['Factura de compra', 'Nota de débito'].some(tipo => tipo.toLowerCase() === doc.descripcion.toLowerCase());
+        }
+        if (formData.tipo_movimiento === 'CR') {
+            return ['Factura de venta', 'Nota de crédito', 'Recibo de pago'].some(tipo => tipo.toLowerCase() === doc.descripcion.toLowerCase());
+        }
+        return false;
+    })
+    : tiposDocumentos; // Mostrar todos si no se seleccionó un movimiento.
+
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -122,14 +136,14 @@ const FormularioTransaccion = ({ transaccionId, agregarTransaccion, fetchTransac
                 </select>
             </div>
             <div>
-                <label>Tipo de Documento</label>
-                <select name="tipo_documento_id" value={formData.tipo_documento_id} onChange={handleInputChange} required>
-                    <option value="">Selecciona un tipo de documento</option>
-                    {tiposDocumentos.map(tipo => (
-                        <option key={tipo.id} value={tipo.id}>{tipo.descripcion}</option> // Cambiar id por descripcion
-                    ))}
-                </select>
-            </div>
+    <label>Tipo de Documento</label>
+    <select name="tipo_documento_id" value={formData.tipo_documento_id} onChange={handleInputChange} required>
+        <option value="">Selecciona un tipo de documento</option>
+        {documentosFiltrados.map(tipo => (
+            <option key={tipo.id} value={tipo.id}>{tipo.descripcion}</option>
+        ))}
+    </select>
+</div>
             <div>
                 <label>Número de Documento</label>
                 <input type="text" name="numero_documento" value={formData.numero_documento} onChange={handleInputChange} required />

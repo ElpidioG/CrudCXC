@@ -3,6 +3,10 @@ import axios from 'axios';
 import FormularioAsientoContable from '../Formularios/FormAsientosContables';
 import '../Styles/ListStyle.css';
 import { AuthContext } from '../Contexts/AuthContext';
+import jsPDF from 'jspdf'; // Importa jsPDF
+import { FaFilePdf, FaFileExcel } from 'react-icons/fa';
+import * as XLSX from 'xlsx'; // Importa la librería xlsx
+import autoTable from 'jspdf-autotable'; // Importa autoTable para manejar tablas
 
 const ListaAsientosContables = () => {
     const [asientosContables, setAsientosContables] = useState([]);
@@ -98,7 +102,80 @@ const ListaAsientosContables = () => {
         setFechaFiltro('');
         setMontoMinimoFiltro('');
         setMontoMaximoFiltro('');
+    };const exportarPDF = () => {
+        const doc = new jsPDF();
+        
+        // Fecha actual
+        const fechaActual = new Date();
+        const fechaFormateada = `${fechaActual.getDate()}/${fechaActual.getMonth() + 1}/${fechaActual.getFullYear()}`;
+    
+
+    
+        // Título del PDF
+        doc.setFontSize(16);
+        doc.text("Lista de Asientos Contables", 14, 20);
+    
+        // Información adicional
+        doc.setFontSize(12);
+        doc.text("Cuentas x Cobrar ISO715", 14, 30);
+        doc.text(`Fecha: ${fechaFormateada}`, 14, 35);
+            // Usuario logueado desde el contexto
+            const usuarioLogueado = username;
+
+        doc.text(`Usuario: ${usuarioLogueado}`, 14, 40); // Agregar el usuario logueado
+    
+        // Generar tabla con autoTable
+        autoTable(doc, {
+            startY: 50, // Ajustamos para dejar espacio para el título, empresa, fecha y usuario
+            head: [['ID', 'Cliente ID', 'Fecha', 'Monto', 'Descripción']], // Encabezados de la tabla
+            body: asientosFiltradosFinales.map(asiento => [
+                asiento.id,
+                asiento.cliente_id,
+                asiento.fecha.split('T')[0], // Solo la fecha sin la hora
+                `$${parseFloat(asiento.monto).toFixed(2)}`,
+                asiento.descripcion,
+            ]),
+        });
+    
+        // Descargar PDF
+        doc.save(`ListaAsientosContables_${fechaFormateada.replace(/\//g, '-')}.pdf`);
     };
+    const exportarExcel = () => {
+        // Información de la empresa, fecha y usuario logueado
+        const nombreEmpresa = "Cuentas x Cobrar ISO715";
+        const fechaActual = new Date().toLocaleDateString(); // Obtiene la fecha en formato local
+        const usuarioLogueado = username; // Obtiene el nombre del usuario desde el contexto
+    
+        // Datos de los asientos contables
+        const asientosData = asientosFiltradosFinales.map(asiento => [
+            asiento.id,
+            asiento.cliente_id,
+            asiento.fecha.split('T')[0], // Solo la fecha
+            `$${parseFloat(asiento.monto).toFixed(2)}`,
+            asiento.descripcion,
+        ]);
+    
+        // Crea el array de arrays con la información
+        const datosExcel = [
+            ["Empresa", nombreEmpresa],
+            ["Fecha", fechaActual],
+            ["Usuario", usuarioLogueado], // Usuario logueado
+            [],
+            ["ID", "Cliente ID", "Fecha", "Monto", "Descripción"], // Encabezados de la tabla
+            ...asientosData,
+        ];
+    
+        // Crea la hoja de trabajo usando aoa_to_sheet
+        const ws = XLSX.utils.aoa_to_sheet(datosExcel);
+    
+        // Crea el libro de trabajo y agrega la hoja
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Asientos Contables");
+    
+        // Guarda el archivo Excel
+        XLSX.writeFile(wb, `ListaAsientosContables_${fechaActual.replace(/\//g, '-')}.xlsx`);
+    };
+    
 
     return (
         <div className="lista">
@@ -192,7 +269,19 @@ const ListaAsientosContables = () => {
                         ))}
                     </tbody>
                 </table>
+
+                
             )}
+            <div className="botones-container">
+    <button onClick={exportarPDF} className="button-exportar-pdf">
+        <FaFilePdf size={24} />
+        Exportar a PDF
+    </button>
+    <button onClick={exportarExcel} className="button-exportar-excel">
+        <FaFileExcel size={24} />
+        Exportar a Excel
+    </button>
+</div>
             {role !== 'user' && (
                 <>
                     <button className="button-toggle-formulario" onClick={toggleFormulario}>

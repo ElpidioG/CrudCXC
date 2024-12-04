@@ -2,6 +2,11 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import FormularioCliente from '../Formularios/FormClientes';
 import '../Styles/ListStyle.css';
+import jsPDF from 'jspdf'; // Importa jsPDF
+import { FaFilePdf, FaFileExcel } from 'react-icons/fa';
+import * as XLSX from 'xlsx'; // Importa la librería xlsx
+import autoTable from 'jspdf-autotable'; // Importa autoTable para manejar tablas
+
 
 const ListaClientes = () => {
     const [clientes, setClientes] = useState([]);
@@ -86,7 +91,72 @@ const ListaClientes = () => {
 
     // Obtener un conjunto único de cédulas para el dropdown
     const cédulasUnicas = [...new Set(clientes.map(cliente => cliente.cedula))];
+    const exportarPDF = () => {
+        const doc = new jsPDF();
+    
+        // Fecha actual
+        const fechaActual = new Date();
+        const fechaFormateada = `${fechaActual.getDate()}/${fechaActual.getMonth() + 1}/${fechaActual.getFullYear()}`;
+    
+        // Título del PDF
+        doc.setFontSize(16);
+        doc.text("Lista de Clientes", 14, 20);
+    
+        // Agregar el nombre de la empresa y la fecha
+        doc.setFontSize(12);
+        doc.text(`Cuentas x Cobrar IS0715`, 14, 30);
+        doc.text(`Fecha: ${fechaFormateada}`, 14, 35);
+        
+    
+        // Generar tabla con autoTable
+        autoTable(doc, {
+            startY: 45, // Ajustamos para dejar espacio para el título y la fecha
+            head: [['Cédula', 'Nombre', 'Límite de Crédito', 'Estado']],
+            body: clientesFiltrados.map(cliente => [
+                cliente.cedula,
+                cliente.nombre,
+                `$${parseFloat(cliente.limite_credito).toFixed(2)}`,
+                cliente.estado
+            ]),
+        });
+    
+        // Descargar PDF
+        doc.save('lista_clientes.pdf');
+    };
 
+
+    const exportarExcel = () => {
+        // Información de la empresa y la fecha
+        const nombreEmpresa = "Cuentas x Cobrar ISO715"; // Cambia esto por el nombre de tu empresa
+        const fechaActual = new Date().toLocaleDateString(); // Obtiene la fecha en formato local
+    
+        // Datos de los clientes
+        const clientesData = clientesFiltrados.map(cliente => [
+            cliente.cedula,
+            cliente.nombre,
+            `$${parseFloat(cliente.limite_credito).toFixed(2)}`,
+            cliente.estado
+        ]);
+    
+        // Crea el array de arrays con la información
+        const datosExcel = [
+            ["Empresa", nombreEmpresa],  // Fila con el nombre de la empresa
+            ["Fecha", fechaActual],      // Fila con la fecha
+            [],                         // Fila vacía para separación
+            ["Cedula", "Nombre", "Limite de Crédito", "Estado"],  // Encabezado de la tabla
+            ...clientesData             // Datos de los clientes
+        ];
+    
+        // Crea la hoja de trabajo usando aoa_to_sheet
+        const ws = XLSX.utils.aoa_to_sheet(datosExcel);
+    
+        // Crea el libro de trabajo y agrega la hoja
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+    
+        // Guarda el archivo Excel
+        XLSX.writeFile(wb, "Listaclientes.xlsx");
+    };
     return (
         <div className="lista">
             <h2>Lista de Clientes</h2>
@@ -136,6 +206,8 @@ const ListaClientes = () => {
                 <button className="button-limpiar-filtros" onClick={limpiarFiltros}>
                     Limpiar Filtros
                 </button>
+
+        
             </div>
             {clientesFiltrados.length === 0 ? (
                 <p className="lista-vacia">No hay clientes disponibles.</p>
@@ -168,9 +240,19 @@ const ListaClientes = () => {
                     </tbody>
                 </table>
             )}
-            <button className="button-toggle-formulario" onClick={() => setMostrarFormulario(prev => !prev)}>
-                {mostrarFormulario ? "Ocultar Formulario" : "Agregar nuevo"}
-            </button>
+<div className="botones-container">
+    <button onClick={exportarPDF} className="button-exportar-pdf">
+        <FaFilePdf size={24} /> {/* Icono PDF */}
+        Exportar a PDF
+    </button>
+    <button onClick={exportarExcel} className="button-exportar-excel">
+        <FaFileExcel size={24} /> {/* Icono Excel */}
+        Exportar a Excel
+    </button>
+    <button className="button-toggle-formulario" onClick={() => setMostrarFormulario(prev => !prev)}>
+        {mostrarFormulario ? "Ocultar Formulario" : "Agregar nuevo"}
+    </button>
+</div>
             {mostrarFormulario && (
                 <FormularioCliente
                     clienteCedula={clienteCedula}
@@ -183,6 +265,6 @@ const ListaClientes = () => {
             )}
         </div>
     );
-};
+};   
 
 export default ListaClientes;

@@ -2,17 +2,21 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import FormularioBalance from '../Formularios/FormBalances';
 import '../Styles/ListStyle.css';
-import { AuthContext } from '../Contexts/AuthContext'; // Importar AuthContext
+import { AuthContext } from '../Contexts/AuthContext';
+import jsPDF from 'jspdf'; // Importa jsPDF
+import { FaFilePdf, FaFileExcel } from 'react-icons/fa';
+import * as XLSX from 'xlsx'; // Importa la librería xlsx
+import autoTable from 'jspdf-autotable'; // Importa autoTable para manejar tablas
 
 const ListaBalances = () => {
     const [balances, setBalances] = useState([]);
     const [balanceId, setBalanceId] = useState(null);
     const [mostrarFormulario, setMostrarFormulario] = useState(false);
-    const [clienteIdFiltro, setClienteIdFiltro] = useState(''); // Estado para el filtro de cliente_id
-    const [fechaCorteFiltro, setFechaCorteFiltro] = useState(''); // Estado para el filtro de fecha de corte
-    const [montoMinimoFiltro, setMontoMinimoFiltro] = useState(''); // Estado para el filtro de monto mínimo
-    const [montoMaximoFiltro, setMontoMaximoFiltro] = useState(''); // Estado para el filtro de monto máximo
-    const { role, username } = useContext(AuthContext); // Obtener role y username del contexto
+    const [clienteIdFiltro, setClienteIdFiltro] = useState('');
+    const [fechaCorteFiltro, setFechaCorteFiltro] = useState('');
+    const [montoMinimoFiltro, setMontoMinimoFiltro] = useState('');
+    const [montoMaximoFiltro, setMontoMaximoFiltro] = useState('');
+    const { role, username } = useContext(AuthContext);
 
     useEffect(() => {
         fetchBalances();
@@ -24,27 +28,23 @@ const ListaBalances = () => {
             .catch(error => console.error(error));
     };
 
-    // Filtrar balances según el rol del usuario
     const balancesFiltrados = balances.filter(balance => {
         if (role === 'user') {
-            return balance.cliente_id === username; // Solo el usuario normal puede ver su propio balance
+            return balance.cliente_id === username;
         }
-        return true; // Los administradores ven todos los balances
+        return true;
     });
 
-    // Filtrar por cliente_id
     const balancesFiltradosPorClienteId = clienteIdFiltro
         ? balancesFiltrados.filter(balance => balance.cliente_id === clienteIdFiltro)
         : balancesFiltrados;
 
-    // Filtrar por fecha de corte
     const balancesFiltradosPorFechaCorte = fechaCorteFiltro
         ? balancesFiltradosPorClienteId.filter(balance => 
             balance.fecha_corte.split('T')[0] === fechaCorteFiltro
         )
         : balancesFiltradosPorClienteId;
 
-    // Filtrar por rango de montos
     const balancesFiltradosFinales = balancesFiltradosPorFechaCorte.filter(balance => {
         const monto = parseFloat(balance.monto);
         const montoMinimo = montoMinimoFiltro ? parseFloat(montoMinimoFiltro) : null;
@@ -59,7 +59,7 @@ const ListaBalances = () => {
     const agregarBalance = (nuevoBalance) => {
         setBalances(prevBalances => [...prevBalances, nuevoBalance]);
         setBalanceId(null);
-        setMostrarFormulario(false); // Ocultar formulario después de agregar
+        setMostrarFormulario(false);
     };
 
     const actualizarBalance = (actualizadoBalance) => {
@@ -69,7 +69,7 @@ const ListaBalances = () => {
             )
         );
         setBalanceId(null);
-        setMostrarFormulario(false); // Ocultar formulario después de actualizar
+        setMostrarFormulario(false);
     };
 
     const handleDelete = (balanceId) => {
@@ -93,11 +93,10 @@ const ListaBalances = () => {
     const toggleFormulario = () => {
         setMostrarFormulario(!mostrarFormulario);
         if (mostrarFormulario) {
-            setBalanceId(null); // Reiniciar ID si se oculta el formulario
+            setBalanceId(null);
         }
     };
 
-    // Función para limpiar los filtros
     const limpiarFiltros = () => {
         setClienteIdFiltro('');
         setFechaCorteFiltro('');
@@ -105,10 +104,69 @@ const ListaBalances = () => {
         setMontoMaximoFiltro('');
     };
 
+
+
+    const exportarPDF = () => {
+        const doc = new jsPDF();
+        const nombreEmpresa = "Cuentas x Cobrar IS0715"; 
+        const fechaActual = new Date().toLocaleDateString();
+    
+        // Encabezado
+        doc.setFontSize(14);
+        doc.text(nombreEmpresa, 14, 15);
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${fechaActual}`, 14, 25);
+                    // Usuario logueado desde el contexto
+                    const usuarioLogueado = username;
+
+                    doc.text(`Usuario: ${usuarioLogueado}`, 14, 40); // Agregar el usuario logueado
+    
+        // Datos de la tabla
+        const datosTabla = balancesFiltradosFinales.map(balance => [
+            balance.cliente_id,
+            balance.nombre,
+            balance.fecha_corte.split('T')[0],
+            balance.antiguedad_promedio_saldos,
+            `$${parseFloat(balance.monto).toFixed(2)}`,
+        ]);
+    
+        // Configurar la tabla
+        autoTable(doc, {
+            startY: 35,
+            head: [['Cliente ID', 'Nombre del Cliente', 'Fecha de Corte', 'Antigüedad', 'Monto']],
+            body: datosTabla,
+        });
+    
+        // Guardar archivo PDF
+        doc.save(`Reporte_Balances_${fechaActual}.pdf`);
+    };
+    
+    const exportarExcel = () => {
+        const nombreEmpresa = "Cuentas x Cobrar IS0715"; 
+        const fechaActual = new Date().toLocaleDateString();
+    
+        const worksheetData = [
+            [nombreEmpresa],
+            [`Fecha: ${fechaActual}`],
+            ['Cliente ID', 'Nombre del Cliente', 'Fecha de Corte', 'Antigüedad', 'Monto'],
+            ...balancesFiltradosFinales.map(balance => [
+                balance.cliente_id,
+                balance.nombre,
+                balance.fecha_corte.split('T')[0],
+                balance.antiguedad_promedio_saldos,
+                parseFloat(balance.monto).toFixed(2),
+            ]),
+        ];
+    
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Balances');
+        XLSX.writeFile(workbook, `Reporte_Balances_${fechaActual}.xlsx`);
+    };
     return (
         <div className="lista">
             <h2>Lista de Balances</h2>
-            <div className="filtros-container"> {/* Contenedor para filtros */}
+            <div className="filtros-container">
                 <div className="filtro-fecha">
                     <label htmlFor="fechaCorteFiltro">Filtrar por Fecha de Corte:</label>
                     <input
@@ -116,17 +174,17 @@ const ListaBalances = () => {
                         id="fechaCorteFiltro"
                         value={fechaCorteFiltro}
                         onChange={(e) => setFechaCorteFiltro(e.target.value)}
-                        className="filtro-input" // Clase para el estilo
+                        className="filtro-input"
                     />
                 </div>
-                {role !== 'user' && ( // Mostrar dropdown solo para administradores
+                {role !== 'user' && (
                     <div className="filtro-input">
                         <label htmlFor="clienteIdFiltro">Filtrar por Cliente ID:</label>
                         <select
                             id="clienteIdFiltro"
                             value={clienteIdFiltro}
                             onChange={(e) => setClienteIdFiltro(e.target.value)}
-                            className="filtro-select" // Clase para el estilo
+                            className="filtro-select"
                         >
                             <option value="">Todos</option>
                             {balances.map(balance => (
@@ -144,7 +202,7 @@ const ListaBalances = () => {
                         id="montoMinimoFiltro"
                         value={montoMinimoFiltro}
                         onChange={(e) => setMontoMinimoFiltro(e.target.value)}
-                        className="filtro-input" // Clase para el estilo
+                        className="filtro-input"
                     />
                     <label htmlFor="montoMaximoFiltro">Monto Máximo:</label>
                     <input
@@ -152,38 +210,42 @@ const ListaBalances = () => {
                         id="montoMaximoFiltro"
                         value={montoMaximoFiltro}
                         onChange={(e) => setMontoMaximoFiltro(e.target.value)}
-                        className="filtro-input" // Clase para el estilo
+                        className="filtro-input"
                     />
                 </div>
                 <button className="button-limpiar-filtros" onClick={limpiarFiltros}>
                     Limpiar Filtros
                 </button>
             </div>
-            {balancesFiltradosFinales.length === 0 ? ( // Cambiar a balancesFiltradosFinales
+            {balancesFiltradosFinales.length === 0 ? (
                 <p className="lista-vacia">No hay balances disponibles.</p>
             ) : (
                 <table>
                     <thead>
                         <tr>
                             <th>Cliente ID</th>
+                            <th>Nombre del Cliente</th>
                             <th>Fecha de Corte</th>
+                            <th>Antigüedad Promedio</th>
                             <th>Monto</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {balancesFiltradosFinales.map((balance) => ( // Usar balancesFiltradosFinales aquí
+                        {balancesFiltradosFinales.map((balance) => (
                             <tr key={balance.id}>
                                 <td>{balance.cliente_id}</td>
-                                <td>{balance.fecha_corte.split('T')[0]}</td> 
+                                <td>{balance.nombre}</td> {/* Mostrar el nombre del cliente */}
+                                <td>{balance.fecha_corte.split('T')[0]}</td>
+                                <td>{balance.antiguedad_promedio_saldos}</td>
                                 <td>${parseFloat(balance.monto).toFixed(2)}</td>
                                 <td>
                                     <div className="button-container">
-                                        {role !== 'user' ? ( // Solo mostrar botones si no es un usuario normal
+                                        {role !== 'user' ? (
                                             <>
                                                 <button onClick={() => {
-                                                    setBalanceId(balance.id); // Establecer el ID del balance a editar
-                                                    setMostrarFormulario(true); // Mostrar el formulario
+                                                    setBalanceId(balance.id);
+                                                    setMostrarFormulario(true);
                                                 }}>Editar</button>
                                                 <button onClick={() => handleDelete(balance.id)}>Eliminar</button>
                                             </>
@@ -197,17 +259,27 @@ const ListaBalances = () => {
                     </tbody>
                 </table>
             )}
-            {role !== 'user' && ( // Mostrar el botón de agregar solo para usuarios no 'user'
+                        <div className="botones-container">
+    <button onClick={exportarPDF} className="button-exportar-pdf">
+        <FaFilePdf size={24} />
+        Exportar a PDF
+    </button>
+    <button onClick={exportarExcel} className="button-exportar-excel">
+        <FaFileExcel size={24} />
+        Exportar a Excel
+    </button>
+</div>
+            {role !== 'user' && (
                 <button className="button-toggle-formulario" onClick={toggleFormulario}>
                     {mostrarFormulario ? "Ocultar Formulario" : "Agregar nuevo"}
                 </button>
             )}
             {mostrarFormulario && (
-                <FormularioBalance 
+                <FormularioBalance
                     balanceId={balanceId}
-                    fetchBalances={fetchBalances} 
-                    agregarBalance={agregarBalance} 
-                    actualizarBalance={actualizarBalance} 
+                    fetchBalances={fetchBalances}
+                    agregarBalance={agregarBalance}
+                    actualizarBalance={actualizarBalance}
                     setBalanceId={setBalanceId}
                     setMostrarFormulario={setMostrarFormulario}
                 />

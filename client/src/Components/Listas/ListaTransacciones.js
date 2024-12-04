@@ -3,6 +3,10 @@ import axios from 'axios';
 import FormularioTransaccion from '../Formularios/FormTransacciones';
 import '../Styles/ListStyle.css';
 import { AuthContext } from '../Contexts/AuthContext';
+import jsPDF from 'jspdf'; // Importa jsPDF
+import { FaFilePdf, FaFileExcel } from 'react-icons/fa';
+import * as XLSX from 'xlsx'; // Importa la librería xlsx
+import autoTable from 'jspdf-autotable'; // Importa autoTable para manejar tablas
 
 const ListaTransacciones = () => {
     const [transacciones, setTransacciones] = useState([]);
@@ -92,6 +96,67 @@ const ListaTransacciones = () => {
         setMontoMaximoFiltro('');
     };
 
+    const exportarPDF = () => {
+        const doc = new jsPDF();
+        doc.text("Cuentas x Cobrar ISO715", 14, 10);
+        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 20);
+        doc.text("Lista de Transacciones", 14, 30);
+        autoTable(doc, {
+            head: [["Tipo Movimiento", "Tipo Documento", "Número Documento", "Fecha", "Cliente", "Monto"]],
+            body: transaccionesFiltradasFinales.map(t => [
+                t.tipo_movimiento,
+                t.tipo_documento_id,
+                t.numero_documento,
+                t.fecha.split('T')[0],
+                t.cliente_id,
+                `$${parseFloat(t.monto).toFixed(2)}`
+            ]),
+            
+        });
+                    // Usuario logueado desde el contexto
+                    const usuarioLogueado = username;
+
+                    doc.text(`Usuario: ${usuarioLogueado}`, 14, 40); // Agregar el usuario logueado
+        doc.save("Lista_Transacciones.pdf");
+    };
+
+    const exportarExcel = () => {
+        const fechaActual = new Date().toLocaleDateString(); // Fecha actual
+        const nombreEmpresa = "Cuentas x Cobrar ISO715"; // Nombre de la empresa
+    
+        // Crear los datos para exportar incluyendo encabezados personalizados
+        const datosParaExportar = [
+            { A: nombreEmpresa }, // Nombre de la empresa como primera fila
+            { A: `Fecha: ${fechaActual}` }, // Fecha como segunda fila
+            {}, // Fila vacía para separar
+            { // Encabezados de la tabla
+                Tipo_Movimiento: "Tipo Movimiento",
+                Tipo_Documento: "Tipo Documento",
+                Número_Documento: "Número Documento",
+                Fecha: "Fecha",
+                Cliente: "Cliente",
+                Monto: "Monto"
+            },
+            ...transaccionesFiltradasFinales.map(t => ({
+                Tipo_Movimiento: t.tipo_movimiento,
+                Tipo_Documento: t.tipo_documento_id,
+                Número_Documento: t.numero_documento,
+                Fecha: t.fecha.split('T')[0],
+                Cliente: t.cliente_id,
+                Monto: `$${parseFloat(t.monto).toFixed(2)}`
+            }))
+        ];
+    
+        // Crear la hoja de Excel a partir de los datos
+        const hoja = XLSX.utils.json_to_sheet(datosParaExportar, { skipHeader: true });
+    
+        // Ajustar estilo de las columnas si es necesario (opcional)
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, hoja, "Transacciones");
+    
+        // Descargar el archivo
+        XLSX.writeFile(libro, `Lista_Transacciones_${fechaActual.replace(/\//g, '-')}.xlsx`);
+    };
     return (
         <div className="lista">
             <h2>Lista de Transacciones</h2>
@@ -174,9 +239,21 @@ const ListaTransacciones = () => {
                     </tbody>
                 </table>
             )}
-            <button className="button-toggle-formulario" onClick={toggleFormulario}>
+            
+            <div className="botones-container">
+    <button onClick={exportarPDF} className="button-exportar-pdf">
+        <FaFilePdf size={24} />
+        Exportar a PDF
+    </button>
+    <button onClick={exportarExcel} className="button-exportar-excel">
+        <FaFileExcel size={24} />
+        Exportar a Excel
+    </button>
+    <button className="button-toggle-formulario" onClick={toggleFormulario}>
                 {mostrarFormulario ? "Ocultar Formulario" : "Agregar nuevo"}
             </button>
+</div>
+            
             {mostrarFormulario && (
                 <FormularioTransaccion 
                     transaccionId={transaccionId}
